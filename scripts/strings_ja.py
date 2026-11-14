@@ -76,6 +76,8 @@ JA = {
     "Microphone: Off": "マイク: オフ",
     "Microphone: On": "マイク: オン",
     "Nothing was recorded.": "何も録画されませんでした。",
+    "The recorded files were kept in this folder (they will be deleted automatically after a day):":
+        "録画したファイルは次のフォルダに残してあります(1 日後に自動で削除されます):",
     "Pause": "一時停止",
     "Paused": "一時停止中",
     "Record Screen (%@)": "画面を録画 (%@)",

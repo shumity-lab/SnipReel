@@ -57,11 +57,17 @@ enum RecordingFiles {
 enum RecordingError: LocalizedError {
     case nothingRecorded
     case exportFailed
+    /// 結合に失敗した。録画したファイルは folder に残してある
+    case composeFailed(folder: URL, underlying: Error)
 
     var errorDescription: String? {
         switch self {
         case .nothingRecorded: return L("Nothing was recorded.")
         case .exportFailed: return L("Failed to create the video file.")
+        case let .composeFailed(folder, underlying):
+            return L("Failed to create the video file.") + "\n" + underlying.localizedDescription + "\n\n"
+                + L("The recorded files were kept in this folder (they will be deleted automatically after a day):")
+                + "\n" + folder.path
         }
     }
 }
@@ -84,6 +90,10 @@ final class ScreenRecorder: NSObject {
     private var segments: [URL] = []
     private var segmentIndex = 0
     private var finishContinuation: CheckedContinuation<Void, Never>?
+    /// 完了を待っている録画出力(古い出力の通知やタイムアウトで別の待ちを解かないように区別する)
+    /// 保持しておくので、待ちが終わるまで同じアドレスが別の出力に再利用されることはない
+    private var pendingOutput: SCRecordingOutput?
+    private var pendingToken = 0
     private let workDir: URL
 
     var isPaused: Bool { output == nil }
@@ -156,7 +166,15 @@ final class ScreenRecorder: NSObject {
         if let stream { try? await stream.stopCapture() }
         stream = nil
         let out = workDir.appendingPathComponent("SnipReel.mp4")
-        return try await RecordingComposer.compose(segments, output: out)
+        do {
+            return try await RecordingComposer.compose(segments, output: out)
+        } catch RecordingError.nothingRecorded {
+            try? FileManager.default.removeItem(at: workDir)
+            throw RecordingError.nothingRecorded
+        } catch {
+            // 録画したファイルは消さずに残す
+            throw RecordingError.composeFailed(folder: workDir, underlying: error)
+        }
     }
 
     /// 録画を破棄する
@@ -190,36 +208,49 @@ final class ScreenRecorder: NSObject {
         segmentStart = nil
         output = nil
         outputURL = nil
+        pendingToken += 1
+        let token = pendingToken
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             finishContinuation = c
+            pendingOutput = out
             do {
                 try stream.removeRecordingOutput(out)
             } catch {
                 resumeFinish()
                 return
             }
-            // 念のため、完了通知が来なくても先に進む
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in self?.resumeFinish() }
+            // 念のため、完了通知が来なくても先に進む(この待ちがまだ続いている場合だけ)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                guard let self, self.pendingToken == token else { return }
+                self.resumeFinish()
+            }
         }
         if FileManager.default.fileExists(atPath: url.path) { segments.append(url) }
     }
 
     private func resumeFinish() {
+        pendingOutput = nil
         finishContinuation?.resume()
         finishContinuation = nil
+    }
+
+    private func isPending(_ out: SCRecordingOutput) -> Bool {
+        pendingOutput === out
     }
 }
 
 extension ScreenRecorder: SCRecordingOutputDelegate {
     nonisolated func recordingOutputDidFinishRecording(_ recordingOutput: SCRecordingOutput) {
-        Task { @MainActor in self.resumeFinish() }
+        let box = UncheckedBox(recordingOutput)
+        Task { @MainActor in if self.isPending(box.value) { self.resumeFinish() } }
     }
 
     nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) {
+        let box = UncheckedBox(recordingOutput)
         Task { @MainActor in
-            if self.finishContinuation != nil {
+            if self.isPending(box.value) {
                 self.resumeFinish()
-            } else {
+            } else if self.output === box.value {
                 self.onUnexpectedStop?(error)
             }
         }

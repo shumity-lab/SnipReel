@@ -201,7 +201,8 @@ final class RecordingControlPanel: NSPanel {
 /// カウントダウン → 録画 → 終了 までの流れを管理する
 @MainActor
 final class RecordingController {
-    enum Phase { case countdown, starting, recording, finishing }
+    /// done: 終了済み(キャンセル・完了・失敗)。以降の操作はすべて無視する
+    enum Phase { case countdown, starting, recording, finishing, done }
 
     /// 結果: 動画ファイル(キャンセル時は nil)・エラー
     var onFinished: ((RecordingController, URL?, Error?) -> Void)?
@@ -257,6 +258,8 @@ final class RecordingController {
     }
 
     private func startRecording() async {
+        // カウントダウン終了から開始までの間にキャンセルされていたら始めない
+        guard phase == .countdown else { return }
         phase = .starting
         busy = true
         refreshPanel()
@@ -271,6 +274,7 @@ final class RecordingController {
             try await r.start(rect: localRect, on: screen)
         } catch {
             await recorder?.cancel()
+            phase = .done
             teardown()
             onFinished?(self, nil, error)
             return
@@ -288,6 +292,7 @@ final class RecordingController {
     func stop() {
         switch phase {
         case .countdown:
+            phase = .done
             teardown()
             onFinished?(self, nil, nil)
         case .starting:
@@ -300,15 +305,17 @@ final class RecordingController {
             Task {
                 do {
                     let url = try await recorder!.finish()
+                    phase = .done
                     teardown()
                     onFinished?(self, url, nil)
                 } catch {
-                    await recorder?.cancel()
+                    // 録画ファイルは消さない(結合に失敗しても元のファイルは残す)
+                    phase = .done
                     teardown()
                     onFinished?(self, nil, error)
                 }
             }
-        case .finishing:
+        case .finishing, .done:
             break
         }
     }
@@ -361,7 +368,7 @@ final class RecordingController {
         switch phase {
         case .countdown: status = L("Starting in %ld…", countdown)
         case .starting: status = L("Starting…")
-        case .finishing: status = L("Saving…")
+        case .finishing, .done: status = L("Saving…")
         case .recording: status = (recorder?.isPaused == true ? L("Paused") + " " : "") + Self.format(recorder?.elapsed ?? 0)
         }
         panel.update(status: status,

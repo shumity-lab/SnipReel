@@ -85,6 +85,7 @@
 "System audio: Off" = "システム音声: オフ";
 "System audio: On" = "システム音声: オン";
 "The display to capture was not found." = "キャプチャ対象のディスプレイが見つかりませんでした。";
+"The recorded files were kept in this folder (they will be deleted automatically after a day):" = "録画したファイルは次のフォルダに残してあります(1 日後に自動で削除されます):";
 "This recording hasn't been saved." = "この録画はまだ保存されていません。";
 "Undo" = "取り消す";
 "Undo %@" = "取り消す: %@";

@@ -85,6 +85,7 @@
 "System audio: Off" = "System audio: Off";
 "System audio: On" = "System audio: On";
 "The display to capture was not found." = "The display to capture was not found.";
+"The recorded files were kept in this folder (they will be deleted automatically after a day):" = "The recorded files were kept in this folder (they will be deleted automatically after a day):";
 "This recording hasn't been saved." = "This recording hasn't been saved.";
 "Undo" = "Undo";
 "Undo %@" = "Undo %@";

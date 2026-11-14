@@ -31,5 +31,6 @@ fi
 # RELEASE=1 で公証に必要なハードンドランタイムとタイムスタンプを付ける
 SIGN_FLAGS=()
 if [ "${RELEASE:-0}" = "1" ]; then SIGN_FLAGS=(--options runtime --timestamp); fi
-codesign --force --sign "${IDENTITY:--}" ${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"} "$APP"
+codesign --force --sign "${IDENTITY:--}" --entitlements Resources/SnipReel.entitlements \
+  ${SIGN_FLAGS[@]+"${SIGN_FLAGS[@]}"} "$APP"
 echo "Built: $APP (signed with: ${IDENTITY:-ad-hoc})"

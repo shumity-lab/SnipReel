@@ -94,10 +94,22 @@ final class VideoWindow: NSWindow {
         defer { makeKeyAndOrderFront(nil) }
         guard ModalPresenter.run({ panel.runModal() }) == .OK, let url = panel.url else { return }
         do {
-            if FileManager.default.fileExists(atPath: url.path) {
-                try FileManager.default.removeItem(at: url) // 上書きは保存ダイアログで確認済み
+            let fm = FileManager.default
+            if url.standardizedFileURL.resolvingSymlinksInPath()
+                == fileURL.standardizedFileURL.resolvingSymlinksInPath() {
+                // 一時ファイル自身が選ばれた: 何もしなくてよい
+            } else if fm.fileExists(atPath: url.path) {
+                // 上書きは保存ダイアログで確認済み。
+                // 先に一時ファイルへコピーしてから差し替え、失敗しても既存のファイルは残す
+                let tmpDir = try fm.url(for: .itemReplacementDirectory, in: .userDomainMask,
+                                        appropriateFor: url, create: true)
+                defer { try? fm.removeItem(at: tmpDir) }
+                let tmp = tmpDir.appendingPathComponent(url.lastPathComponent)
+                try fm.copyItem(at: fileURL, to: tmp)
+                _ = try fm.replaceItemAt(url, withItemAt: tmp)
+            } else {
+                try fm.copyItem(at: fileURL, to: url)
             }
-            try FileManager.default.copyItem(at: fileURL, to: url)
             isSaved = true
             bar.flash(L("Saved"))
         } catch {
