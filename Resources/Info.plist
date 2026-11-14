@@ -11,7 +11,7 @@
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>dev.snipreel.SnipReel</string>
+	<string>io.github.shumity-lab.SnipReel</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
