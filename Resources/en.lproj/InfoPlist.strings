@@ -1,0 +1,2 @@
+/* scripts/gen-strings.py で生成。直接編集しないこと */
+"NSScreenCaptureUsageDescription" = "Used to capture the area of the screen you select.";
