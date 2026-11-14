@@ -1,14 +1,34 @@
 import AppKit
 import Carbon
 
+/// グローバルショートカットで起動する操作
+enum HotKeyAction: UInt32, CaseIterable {
+    case capture = 1
+    case record = 2
+
+    var defaultsKey: String {
+        switch self {
+        case .capture: return "captureShortcut"
+        case .record: return "recordShortcut"
+        }
+    }
+
+    var defaultShortcut: Shortcut {
+        switch self {
+        case .capture:
+            return Shortcut(keyCode: UInt32(kVK_ANSI_2), modifiers: NSEvent.ModifierFlags([.command, .shift]).rawValue)
+        case .record:
+            return Shortcut(keyCode: UInt32(kVK_ANSI_2), modifiers: NSEvent.ModifierFlags([.command, .shift, .option]).rawValue)
+        }
+    }
+}
+
 /// グローバルショートカットの定義
 struct Shortcut: Codable, Equatable {
     var keyCode: UInt32
     /// NSEvent.ModifierFlags の rawValue(⌘⇧⌥⌃ のみ)
     var modifiers: UInt
 
-    static let `default` = Shortcut(keyCode: UInt32(kVK_ANSI_2),
-                                    modifiers: NSEvent.ModifierFlags([.command, .shift]).rawValue)
 
     var modifierFlags: NSEvent.ModifierFlags { NSEvent.ModifierFlags(rawValue: modifiers) }
 
@@ -36,19 +56,17 @@ struct Shortcut: Codable, Equatable {
 
     // MARK: 保存
 
-    private static let defaultsKey = "captureShortcut"
-
-    static func load() -> Shortcut {
-        if let data = UserDefaults.standard.data(forKey: defaultsKey),
+    static func load(for action: HotKeyAction) -> Shortcut {
+        if let data = UserDefaults.standard.data(forKey: action.defaultsKey),
            let s = try? JSONDecoder().decode(Shortcut.self, from: data) {
             return s
         }
-        return .default
+        return action.defaultShortcut
     }
 
-    func save() {
+    func save(for action: HotKeyAction) {
         if let data = try? JSONEncoder().encode(self) {
-            UserDefaults.standard.set(data, forKey: Shortcut.defaultsKey)
+            UserDefaults.standard.set(data, forKey: action.defaultsKey)
         }
     }
 

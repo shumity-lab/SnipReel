@@ -63,9 +63,37 @@ JA = {
     "Click the button, then press a new key combination. It must include ⌘, ⌃ or ⌥ (function keys can be used alone).":
         "ボタンをクリックしてから、新しいキーの組み合わせを押してください。⌘ / ⌃ / ⌥ のいずれかを含める必要があります(F キーは単独でも可)。",
     "%@ is used by another app and couldn't be registered.": "%@ は他のアプリで使われているため登録できませんでした。",
+    # 録画
+    "%@ is already used by another SnipReel shortcut.": "%@ は SnipReel の別のショートカットで使われています。",
+    "Allow SnipReel in System Settings → Privacy & Security → Microphone.":
+        "システム設定 →「プライバシーとセキュリティ」→「マイク」で SnipReel を許可してください。",
+    "Close it anyway?": "保存せずに閉じますか？",
+    "Copy file (⌘C)": "ファイルをコピー (⌘C)",
+    "Drag to select an area to record / Click to record the full screen / Esc to cancel":
+        "ドラッグで録画範囲を選択 / クリックで画面全体 / Esc でキャンセル",
+    "Failed to create the video file.": "動画ファイルの作成に失敗しました。",
+    "Microphone permission is required": "マイクの許可が必要です",
+    "Microphone: Off": "マイク: オフ",
+    "Microphone: On": "マイク: オン",
+    "Nothing was recorded.": "何も録画されませんでした。",
+    "Pause": "一時停止",
+    "Paused": "一時停止中",
+    "Record Screen (%@)": "画面を録画 (%@)",
+    "Recording shortcut:": "録画のショートカット:",
+    "Resume": "再開",
+    "Saving…": "保存中…",
+    "Starting in %ld…": "%ld 秒後に開始…",
+    "Starting…": "開始中…",
+    "Stop": "停止",
+    "Stop recording": "録画を停止",
+    "System audio: Off": "システム音声: オフ",
+    "System audio: On": "システム音声: オン",
+    "This recording hasn't been saved.": "この録画はまだ保存されていません。",
 }
 
 INFOPLIST = {
-    "en": {"NSScreenCaptureUsageDescription": "Used to capture the area of the screen you select."},
-    "ja": {"NSScreenCaptureUsageDescription": "選択した範囲の画面をキャプチャするために使用します。"},
+    "en": {"NSScreenCaptureUsageDescription": "Used to capture the area of the screen you select.",
+           "NSMicrophoneUsageDescription": "Used to record your voice with screen recordings."},
+    "ja": {"NSScreenCaptureUsageDescription": "選択した範囲の画面をキャプチャするために使用します。",
+           "NSMicrophoneUsageDescription": "画面録画に自分の声を入れるために使用します。"},
 }

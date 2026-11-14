@@ -213,14 +213,13 @@ final class CaptureWindow: NSWindow {
         panel.allowedContentTypes = [format.utType]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = CaptureWindow.defaultFileName(ext: format.fileExtension)
-        panel.level = NSWindow.Level(rawValue: CaptureWindow.captureLevel.rawValue + 1)
         NSApp.activate(ignoringOtherApps: true)
         let image = exportImage()
         defer {
             makeKeyAndOrderFront(nil)
             focusImage()
         }
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard ModalPresenter.run({ panel.runModal() }) == .OK, let url = panel.url else { return }
         do {
             guard let data = ImageEncoder.encode(image, format: format, dpi: 72 * backingScale) else {
                 throw CocoaError(.fileWriteUnknown)
@@ -229,8 +228,7 @@ final class CaptureWindow: NSWindow {
             infoBar.flash(L("Saved"))
         } catch {
             let alert = NSAlert(error: error)
-            alert.window.level = panel.level
-            alert.runModal()
+            ModalPresenter.run({ alert.runModal() })
         }
     }
 
@@ -291,10 +289,9 @@ final class CustomSizeDialog: NSObject, NSTextFieldDelegate {
         grid.column(at: 0).xPlacement = .trailing
         grid.frame = NSRect(x: 0, y: 0, width: 200, height: 56)
         alert.accessoryView = grid
-        alert.window.level = level
         alert.window.initialFirstResponder = widthField
 
-        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        guard ModalPresenter.run({ alert.runModal() }) == .alertFirstButtonReturn else { return nil }
         let maxWidth = originalWidth * 4
         let w = min(max(widthField.integerValue, 1), maxWidth)
         return w
@@ -711,7 +708,6 @@ final class CaptureView: NSView {
         panel.showsAlpha = true
         panel.setTarget(self)
         panel.setAction(#selector(colorPanelChanged(_:)))
-        panel.level = NSWindow.Level(rawValue: CaptureWindow.captureLevel.rawValue + 1)
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
     }

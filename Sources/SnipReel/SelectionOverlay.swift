@@ -1,10 +1,16 @@
 import AppKit
 
+enum SelectionMode {
+    case capture
+    /// 録画: クリックだけで画面全体を選べる
+    case record
+}
+
 /// 範囲選択用の全画面オーバーレイ(ディスプレイごとに 1 枚)
 final class SelectionOverlayWindow: NSWindow {
     let targetScreen: NSScreen
 
-    init(screen: NSScreen, onFinish: @escaping (SelectionOverlayWindow, CGRect?) -> Void) {
+    init(screen: NSScreen, mode: SelectionMode, onFinish: @escaping (SelectionOverlayWindow, CGRect?) -> Void) {
         targetScreen = screen
         super.init(contentRect: screen.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         setFrame(screen.frame, display: false)
@@ -17,6 +23,7 @@ final class SelectionOverlayWindow: NSWindow {
         isReleasedWhenClosed = false
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         let view = SelectionView(frame: NSRect(origin: .zero, size: screen.frame.size))
+        view.mode = mode
         view.onFinish = { [unowned self] rect in onFinish(self, rect) }
         contentView = view
     }
@@ -27,6 +34,7 @@ final class SelectionOverlayWindow: NSWindow {
 
 final class SelectionView: NSView {
     var onFinish: ((CGRect?) -> Void)?
+    var mode: SelectionMode = .capture
     private var startPoint: CGPoint?
     private var selection: CGRect?
     private var finished = false
@@ -57,6 +65,10 @@ final class SelectionView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         guard let sel = selection?.integral, sel.width >= 3, sel.height >= 3 else {
+            if mode == .record, startPoint != nil {
+                finish(bounds) // クリックだけ → 画面全体を録画
+                return
+            }
             // クリックだけ(ほぼサイズ 0)はやり直し扱い
             startPoint = nil
             selection = nil
@@ -118,7 +130,9 @@ final class SelectionView: NSView {
     }
 
     private func drawHint() {
-        let text = L("Drag to select an area / Esc to cancel") as NSString
+        let text = (mode == .record
+            ? L("Drag to select an area to record / Click to record the full screen / Esc to cancel")
+            : L("Drag to select an area / Esc to cancel")) as NSString
         let attrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 14, weight: .medium),
             .foregroundColor: NSColor.white,

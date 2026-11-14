@@ -71,29 +71,54 @@ final class ShortcutRecorderButton: NSButton {
 
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
-    private let recorder: ShortcutRecorderButton
+    private var recorders: [HotKeyAction: ShortcutRecorderButton] = [:]
     private let statusLabel = NSTextField(labelWithString: "")
-    var onShortcutChanged: ((Shortcut) -> Bool)?
+    /// 登録できたら nil、できなければエラーメッセージ
+    var onShortcutChanged: ((HotKeyAction, Shortcut) -> String?)?
+    /// キー入力の記録中かどうか(記録中はホットキーを止める)
     var onRecordingChanged: ((Bool) -> Void)?
 
-    init(shortcut: Shortcut) {
-        recorder = ShortcutRecorderButton(shortcut: shortcut)
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 170),
+    init(shortcuts: [HotKeyAction: Shortcut]) {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 200),
                               styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = L("SnipReel Settings")
         window.isReleasedWhenClosed = false
         super.init(window: window)
         window.delegate = self
+        for action in HotKeyAction.allCases {
+            recorders[action] = ShortcutRecorderButton(shortcut: shortcuts[action] ?? action.defaultShortcut)
+        }
         buildUI()
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
+    private func title(for action: HotKeyAction) -> String {
+        switch action {
+        case .capture: return L("Capture shortcut:")
+        case .record: return L("Recording shortcut:")
+        }
+    }
+
     private func buildUI() {
         guard let content = window?.contentView else { return }
 
-        let label = NSTextField(labelWithString: L("Capture shortcut:"))
-        let resetButton = NSButton(title: L("Restore Default"), target: self, action: #selector(resetShortcut))
+        var rows: [[NSView]] = []
+        for action in HotKeyAction.allCases {
+            guard let recorder = recorders[action] else { continue }
+            recorder.onChange = { [weak self] s in self?.apply(s, for: action) }
+            recorder.onRecordingChanged = { [weak self] r in self?.onRecordingChanged?(r) }
+            recorder.widthAnchor.constraint(greaterThanOrEqualToConstant: 140).isActive = true
+            let reset = NSButton(title: L("Restore Default"), target: self, action: #selector(resetShortcut(_:)))
+            reset.tag = Int(action.rawValue)
+            rows.append([NSTextField(labelWithString: title(for: action)), recorder, reset])
+        }
+        let grid = NSGridView(views: rows)
+        grid.rowSpacing = 10
+        grid.columnSpacing = 8
+        grid.column(at: 0).xPlacement = .trailing
+        grid.rowAlignment = .firstBaseline
+
         let note = NSTextField(wrappingLabelWithString:
             L("Click the button, then press a new key combination. It must include ⌘, ⌃ or ⌥ (function keys can be used alone)."))
         note.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -101,15 +126,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         statusLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         statusLabel.textColor = .systemRed
 
-        recorder.onChange = { [weak self] s in self?.apply(s) }
-        recorder.onRecordingChanged = { [weak self] r in self?.onRecordingChanged?(r) }
-
-        let row = NSStackView(views: [label, recorder, resetButton])
-        row.orientation = .horizontal
-        row.spacing = 8
-        recorder.widthAnchor.constraint(greaterThanOrEqualToConstant: 120).isActive = true
-
-        let stack = NSStackView(views: [row, note, statusLabel])
+        let stack = NSStackView(views: [grid, note, statusLabel])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
@@ -123,18 +140,24 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         ])
     }
 
-    private func apply(_ shortcut: Shortcut) {
-        if onShortcutChanged?(shortcut) == true {
-            statusLabel.stringValue = ""
+    private func apply(_ shortcut: Shortcut, for action: HotKeyAction) {
+        if let error = onShortcutChanged?(action, shortcut) {
+            statusLabel.stringValue = error
         } else {
-            statusLabel.stringValue = L("%@ is used by another app and couldn't be registered.", shortcut.displayString)
+            statusLabel.stringValue = ""
         }
     }
 
-    @objc private func resetShortcut() {
-        recorder.stopRecording()
-        recorder.shortcut = .default
-        apply(.default)
+    /// 登録に失敗した時などに表示を戻す
+    func setShortcut(_ shortcut: Shortcut, for action: HotKeyAction) {
+        recorders[action]?.shortcut = shortcut
+    }
+
+    @objc private func resetShortcut(_ sender: NSButton) {
+        guard let action = HotKeyAction(rawValue: UInt32(sender.tag)) else { return }
+        recorders[action]?.stopRecording()
+        recorders[action]?.shortcut = action.defaultShortcut
+        apply(action.defaultShortcut, for: action)
     }
 
     func show() {
@@ -144,11 +167,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window?.makeKeyAndOrderFront(nil)
     }
 
-    func windowWillClose(_ notification: Notification) {
-        recorder.stopRecording()
+    private func stopAllRecording() {
+        for r in recorders.values { r.stopRecording() }
     }
 
-    func windowDidResignKey(_ notification: Notification) {
-        recorder.stopRecording()
-    }
+    func windowWillClose(_ notification: Notification) { stopAllRecording() }
+    func windowDidResignKey(_ notification: Notification) { stopAllRecording() }
 }

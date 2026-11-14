@@ -1,9 +1,9 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
     name: "SnipReel",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     targets: [
         .executableTarget(
             name: "SnipReel",
@@ -11,7 +11,10 @@ let package = Package(
             linkerSettings: [
                 .linkedFramework("ScreenCaptureKit"),
                 .linkedFramework("Carbon"),
+                .linkedFramework("AVFoundation"),
+                .linkedFramework("AVKit"),
             ]
         )
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )

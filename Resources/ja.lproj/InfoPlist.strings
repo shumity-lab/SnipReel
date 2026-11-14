@@ -1,2 +1,3 @@
 /* scripts/gen-strings.py で生成。直接編集しないこと */
+"NSMicrophoneUsageDescription" = "画面録画に自分の声を入れるために使用します。";
 "NSScreenCaptureUsageDescription" = "選択した範囲の画面をキャプチャするために使用します。";
