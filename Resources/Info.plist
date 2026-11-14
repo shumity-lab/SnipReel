@@ -22,9 +22,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>15.0</string>
 	<key>LSUIElement</key>
@@ -35,5 +35,11 @@
 	<string>Used to record your voice with screen recordings.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Used to capture the area of the screen you select.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/shumity-lab/SnipReel/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>z6V3QdxuOOJvTK3pgS/hp50lBMKolhkieUh8EPycJxI=</string>
 </dict>
 </plist>

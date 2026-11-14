@@ -11,6 +11,7 @@
 "Capture Area (%@)" = "範囲をキャプチャ (%@)";
 "Capture failed" = "キャプチャに失敗しました";
 "Capture shortcut:" = "キャプチャのショートカット:";
+"Check for Updates…" = "アップデートを確認…";
 "Clear All" = "すべて消去";
 "Clear All Drawings" = "書き込みをすべて消去";
 "Click the button, then press a new key combination. It must include ⌘, ⌃ or ⌥ (function keys can be used alone)." = "ボタンをクリックしてから、新しいキーの組み合わせを押してください。⌘ / ⌃ / ⌥ のいずれかを含める必要があります(F キーは単独でも可)。";

@@ -1,4 +1,5 @@
 import AppKit
+import Sparkle
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -15,9 +16,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var captureWindows: [CaptureWindow] = []
     private var videoWindows: [VideoWindow] = []
     private var recording: RecordingController?
+    private let updates = UpdateManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         RecordingFiles.cleanUpOldFiles()
+        updates.start()
         setupStatusItem()
 
         HotKeyManager.shared.onPressed = { [weak self] action in self?.handleHotKey(action) }
@@ -89,6 +92,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let settings = NSMenuItem(title: L("Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
+        if let check = updates.makeMenuItem() { menu.addItem(check) }
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: L("Quit SnipReel"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 

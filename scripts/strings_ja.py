@@ -14,6 +14,7 @@ JA = {
         "他のアプリで使われている可能性があります。メニューバーの SnipReel →「設定…」から変更してください。",
     "Close All Captures": "すべてのキャプチャを閉じる",
     "Settings…": "設定…",
+    "Check for Updates…": "アップデートを確認…",
     "Quit SnipReel": "SnipReel を終了",
     "Capture Area (%@)": "範囲をキャプチャ (%@)",
     "Screen Recording permission is required": "画面収録の許可が必要です",
